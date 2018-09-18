@@ -1,0 +1,59 @@
+import defusedxml.ElementTree as ET
+import glob
+import collections
+
+class Vuln:
+    def __init__(self, pluginID, firstDetection,lastDetection, name,\
+        vulnDescription, remediation, severity, source):
+    
+        self.pluginID = pluginID
+        self.firstDetection = firstDetection
+        self.lastDetection = lastDetection
+        self.name = name
+        self.vulnDescription = vulnDescription
+        self.remediation = remediation
+        self.severity = severity
+        self.source = source
+        self.hosts = []
+
+    def addHost(self, hostname):
+        if not self.hasHost(hostname):
+            self.hosts.append(hostname)
+            
+    def removeHost(self, hostname):
+        if self.hasHost(hostname):
+            self.hosts.remove(hostname)
+    
+    def hasHost(self, hostname):
+        return self.hosts.count(hostname)
+
+vulnList = []
+
+
+def secondTest(NessusFile):
+    #Load MXL file for parsing
+    root = ET.parse(NessusFile).getroot()
+    #Create object
+    for plugin in root.findall('.//ReportItem'):
+        #Filter informational plugins
+        if plugin.attrib.get('pluginID') == '19506'\
+            or plugin.attrib.get('severity') != '0':
+            pluginID = plugin.attrib.get('pluginID')
+            #Get plugin information
+            pluginName = plugin.find('plugin_name').text
+            vulnDescription = plugin.find('synopsis').text
+            remediation = plugin.find('solution').text
+            #Get severity
+            if plugin.find('risk_factor').text == 'Low':
+                severity = 'Low'
+            elif plugin.find('risk_factor').text == 'Medium':
+                severity = 'Moderate'
+            elif plugin.find('risk_factor').text == 'High' \
+                or plugin.find('risk_factor').text == 'Critical':
+                severity = 'High'
+            else:
+                severity = 'Informational'
+            if pluginID in vulnList:
+				vulnList[pluginID] = Vuln(pluginID, 1/1/2018,2/1/2018,\
+                pluginName, vulnDescription, remediation,\
+                severity, 'Nessus')
